@@ -1,8 +1,13 @@
-#pragma once /* Guard header file */
+#pragma once /* SRF02_H */
 
 #include <cstdint>
-#include <functional>
 #include <Arduino.h>
+#include "SAMDTimerInterrupt.hpp"
+#include "SAMD_ISR_Timer.hpp"
+
+#define SELECTED_TIMER TIMER_TC5
+#define HW_TIMER_INTERVAL_MS 50L
+
 
 /**
  * This class represents an intance of a Srf02 ultrasonic sensor connected via I2C.
@@ -17,21 +22,43 @@ public:
     ~Srf02();
 
     /**
+     * Definition of success or error return values.
+    */
+    enum Status : uint8_t
+    {
+        ok,                         /* Succesfull */
+        delay_not_acomplished,      /* Tried taking measurement before specified delay time */
+        delay_too_small,            /* Tried setting delay time to a value lower than MINIMUM_DELAY_MS */
+        no_callback,                /* Tried setting period without specifying a callback */
+        timer_error,                /* Failed to initialize hardware timer for periodic measurments */
+        already_initialized         /* Common dependencies already initialized */
+    };
+
+    /**
+     * Initializes Wire object, necessary to access the I2C bus. This function must be called
+     * before any Srf02 instance is ready to be used.
+    */
+    static Status begin(void);
+
+
+    /**
      * Returns the I2C address of the sensor.
      * 
      * @return Sensor's I2C address.
     */
     inline int8_t address(void) { return address_; };
 
+
     /**
      * Definition of the Srf02 ultrasonic sensor unit selection codes.
     */
-    enum class Unit : uint8_t 
+    enum Unit : uint8_t 
     {
         inc = 80,
         cm  = 81,
         ms  = 82
     };
+
 
     /**
      * Sets the unit in which measurements should be taken.
@@ -40,6 +67,7 @@ public:
     */
     inline void unit(Unit unit) { unit_ = unit; }
 
+
     /**
      * Gets the unit in which measurements are being taken.
      * 
@@ -47,22 +75,6 @@ public:
     */
     inline Unit unit(void) { return unit_; }
 
-    // enum class OperationMode : uint8_t
-    // {
-    //     one_shot = 1,
-    //     on_period,
-    //     off
-    // };
-
-    /**
-     * Definition of success or error return values.
-    */
-    enum class Status : uint8_t
-    {
-        ok,                         /* Succesfull */
-        delay_not_acomplished,      /* Tried taking measurement before specified delay time */
-        delay_too_small             /* Tried setting delay time to a value lower than MINIMUM_DELAY_MS */
-    };
 
     /**
      * Take a distance measurement from the sensor. The returned value's unit depends on the previously set 
@@ -74,12 +86,29 @@ public:
      *         - ok
      *         - delay_not_acomplished
     */
-    Status readRange(int16_t& range);
+    Status readRange(uint16_t& range);
+
+
+    /**
+     * On period callback type 
+    */
+    typedef void (*callback_t) (uint16_t);
+
+    /**
+     *
+     * 
+     * @return Success status, either of:
+     *         - ok
+     *         - no_callback
+    */
+    Status onPeriod(uint16_t period_ms, callback_t callback = nullptr);
+
 
     /**
      * Minimum value for this sensor's delay time.
     */
-    static constexpr int16_t MINIMUM_DELAY_MS = 65;
+    static constexpr uint16_t MINIMUM_DELAY_MS = 65;
+
 
     /**
      * Sets the delay for the sensor. This delay specifies the minimum time required to take between
@@ -93,6 +122,7 @@ public:
     */
     Status delay(uint16_t delay);
 
+
     /**
      * Sets the delay for the sensor. This delay specifies the minimum time required to take between
      * two consecutive measurements.
@@ -105,31 +135,35 @@ public:
     */
     inline uint16_t delay(void) { return delay_ms_; }
 
+
 private:
-    uint8_t address_;                           /* Sensor's I2C address */
-    uint16_t delay_ms_;                         /* Sensor's current delay time */
+    uint8_t address_;                           /* Sensor's I2C address              */
+    uint16_t delay_ms_;                         /* Sensor's current delay time       */
     Unit unit_;                                 /* Sensor's current measurement unit */
-    unsigned long last_measurment_ms_;          /* Time of last measurement */
+    unsigned long last_measurement_ms_;         /* Time of last measurement          */
 
-    // OperationMode op_mode_;
-    std::function<void(int16_t)> callback_;     /* TODO: Study whether to implement operationModes in this class */
-
-    static bool i2c_initialized;                /* Whether the Wire object has been initialized */
+    uint16_t period_ms_;                        /* Time period between periodic measurement    */
+    callback_t callback_;                       /* Handler function for periodic measurements  */
+    static SAMDTimer timer_;                    /* Timer for monitoring periodic measurements  */
+    static SAMD_ISR_Timer ISR_timer_;           /* ISR_Timer for serving each periodic handler */
+    
+    /* Whether common dependencies have been initialized (I2C, SAMDTimer)*/
+    static bool initialized;                
 
 private:
 
     /**
-     * Computes time passed since last measurment.
+     * Computes time passed since last measurement.
      * 
-     * @return Time passed since last measurment.
+     * @return Time passed since last measurement.
     */
-    inline unsigned long sinceLastMeasurment() { return millis() - last_measurment_ms_; }
+    inline unsigned long sinceLastMeasurement() { return millis() - last_measurement_ms_; }
 
 
     /**
      * Definition of Srf02 register's and their access codes.
     */
-    enum class Register : uint8_t 
+    enum Register : uint8_t 
     {
         command_register            =    0,
         range_high_byte             =    2,
@@ -138,12 +172,14 @@ private:
         autotune_minimum_low_byte   =    5
     };
 
+
     /**
      * Notifies the Srf02 sensor to use the currently set unit to make the next measurment.
      * 
      * @note Should be called each time before reading the high and low bytes of the range register.
     */
     void setUnit(void);
+
 
     /**
      * Reads one of the Srf02 sensor's registers.
@@ -155,9 +191,11 @@ private:
     */
     uint8_t read_register(Register srf02_register);
 
+    static void callbackDispatcher(void*);
+
     /**
-     * Helper function to cast an enum class to it's underlying value.
+     * Run ISR Timer on every HW timer interrupt 
     */
-    template<typename enum_type, typename cast_type>
-    static cast_type enum2value(enum_type enum_instance);
+    static void TimerHandler();
+
 };
