@@ -11,7 +11,8 @@ Srf02::Srf02(uint8_t address) : address_(address >> 1),
                                 delay_ms_(MINIMUM_DELAY_MS),
                                 unit_(Srf02::Unit::cm),
                                 last_measurement_ms_(millis()),
-                                callback_(nullptr)
+                                callback_(nullptr),
+                                onPeriod_(false)
 {}
 
 Srf02::~Srf02() {}
@@ -22,12 +23,12 @@ Srf02::Status Srf02::begin()
     {
         Wire.begin();
 
-        int ret_ = Srf02::timer_.attachInterruptInterval_MS(
+        bool ret_ = Srf02::timer_.attachInterruptInterval_MS(
             HW_TIMER_INTERVAL_MS, 
             Srf02::TimerHandler
         );
 
-        if (ret_) 
+        if (!ret_) 
             return Srf02::Status::timer_error;
         
         Srf02::initialized = true;
@@ -65,9 +66,27 @@ Srf02::Status Srf02::readRange(uint16_t &range)
 
 void Srf02::callbackDispatcher(void* arg)
 {
-    Srf02::callback_t callback = (Srf02::callback_t) arg;
+    Srf02* sensor = (Srf02*) arg;
+    
+    uint16_t range;
+    sensor->readRange(range);
 
-    callback(0);
+    sensor->callback_(range);
+}
+
+Srf02::Status Srf02::off()
+{
+    if(onPeriod_)
+    {
+        Srf02::ISR_timer_.disable(timerId_);
+        onPeriod_ = false;
+    }
+}
+
+Srf02::Status Srf02::oneShot(uint16_t& range)
+{
+    off();
+    readRange(range);
 }
 
 Srf02::Status Srf02::onPeriod(
@@ -83,7 +102,9 @@ Srf02::Status Srf02::onPeriod(
 
     period_ms_ = period_ms;
 
-    Srf02::ISR_timer_.setInterval(0UL, Srf02::callbackDispatcher, (void*)callback_);
+    timerId_ = Srf02::ISR_timer_.setInterval(1000UL, Srf02::callbackDispatcher, (void*)this);
+
+    onPeriod_ = true;
 
     return Srf02::Status::ok;
 }
@@ -104,9 +125,18 @@ uint8_t Srf02::read_register(Srf02::Register srf02_register)
     Wire.write(srf02_register);
     Wire.endTransmission();
     
-    // TODO: Add timeout to prevent infinite wait time 
+    unsigned long startTime_ms = millis();
+    unsigned long timeout_ms = 500;
+    
     Wire.requestFrom(address_, 1);
-    while(!Wire.available()) { /* Wait for Srf02 to respond */ }
+
+    while(!Wire.available()) { 
+        /* Wait for Srf02 to respond */ 
+
+        if((millis() - startTime_ms) > timeout_ms)
+            return -1;
+    }
+
     return Wire.read();
 }
 

@@ -13,6 +13,9 @@ void callback(uint16_t range)
   static bool toggle = false;
   digitalWrite(LED_BUILTIN, toggle);
   toggle = !toggle;
+
+  Serial.print("range: ");
+  Serial.println(range);
 }
 
 void setup()
@@ -26,25 +29,22 @@ void setup()
   if(Srf02::begin() == Srf02::Status::ok){
     Serial.println("Srf02 [ok]");
   } else {
-
-    // TODO: Currently entering this else statement
-    // Study cause
     Serial.println("Srf02 [error]");
   }
 
-  sensors[0].onPeriod(1000, callback);
+  // sensors[0].onPeriod(1000, callback);
 
 }
 
 void loop()
 {
 
-  // int16_t range = 0;
-  // if (sensors[1].readRange(range) == Srf02::Status::ok)
-  // {
-  //   Serial.print("Rango: ");
-  //   Serial.println(range);
-  // }
+  uint16_t range = 0;
+  if (sensors[1].oneShot(range) == Srf02::Status::ok)
+  {
+    Serial.print("Rango: ");
+    Serial.println(range);
+  }
 }
 
 /****************************************************************************************************************************
