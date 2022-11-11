@@ -2,55 +2,60 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 #include <CAN.h>
+#include <serial_parser.hpp>
+#include <array>
+
+Parser sp;
 
 void setup() {
   Serial.begin(9600);
   while (!Serial);
 
-  Serial.println("CAN Receiver");
+  Serial.setTimeout(5000);
 
-  // start the CAN bus at 500 kbps
-  if (!CAN.begin(500E3)) {
-    Serial.println("Starting CAN failed!");
-    while (1);
-  }
 }
 
-void loop() {
-  // try to parse packet
-  int packetSize = CAN.parsePacket();
+void readUntil( char until, char* buffer, size_t length)
+{
+  char current = 0;
 
-  if (packetSize) {
-    // received a packet
-    Serial.print("Received ");
+  size_t i = 0;
 
-    if (CAN.packetExtended()) {
-      Serial.print("extended ");
+  while(i < length && current != until)
+  {
+    if(Serial.available())
+    {
+      current = Serial.read();
+      buffer[i++] = current;
     }
+  }
 
-    if (CAN.packetRtr()) {
-      // Remote transmission request, packet contains no data
-      Serial.print("RTR ");
+  buffer[i-1] = 0;
+}
+
+void loop() 
+{
+
+  char buffer[1000];
+  readUntil('\n', buffer, 1000);
+
+  Parser::Command c;
+
+  try {
+    c = sp.parseCommand(buffer);
+    Serial.print("Ok: ");
+    Serial.println(c);
+  } 
+  catch(Parser::Error e)
+  {
+    Serial.print("Error: ");
+
+    switch(e)
+    {
+      case Parser::Error::number_expected: Serial.println(1) ; break;
+      case Parser::Error::unknown_command: Serial.println(2); break;
+      case Parser::Error::unknown_unit:Serial.println(3); break;
     }
-
-    Serial.print("packet with id 0x");
-    Serial.print(CAN.packetId(), HEX);
-
-    if (CAN.packetRtr()) {
-      Serial.print(" and requested length ");
-      Serial.println(CAN.packetDlc());
-    } else {
-      Serial.print(" and length ");
-      Serial.println(packetSize);
-
-      // only print packet data for non-RTR packets
-      while (CAN.available()) {
-        Serial.print((char)CAN.read());
-      }
-      Serial.println();
-    }
-
-    Serial.println();
   }
 }
 

@@ -54,8 +54,17 @@ Srf02::Status Srf02::readRange(uint16_t &range)
 
     setUnit();
 
-    uint8_t range_high = read_register(Srf02::Register::range_high_byte);
-    uint8_t range_low  = read_register(Srf02::Register::range_low_byte);
+    uint8_t range_high, range_low;
+
+    try 
+    {
+        range_high = read_register(Srf02::Register::range_high_byte);
+        range_low  = read_register(Srf02::Register::range_low_byte);
+    }
+    catch(Srf02::Status ex)
+    {
+        return ex;
+    }
 
     range = range_high << 8 | range_low;
 
@@ -86,7 +95,7 @@ Srf02::Status Srf02::off()
 Srf02::Status Srf02::oneShot(uint16_t& range)
 {
     off();
-    readRange(range);
+    return readRange(range);
 }
 
 Srf02::Status Srf02::onPeriod(
@@ -133,8 +142,9 @@ uint8_t Srf02::read_register(Srf02::Register srf02_register)
     while(!Wire.available()) { 
         /* Wait for Srf02 to respond */ 
 
+
         if((millis() - startTime_ms) > timeout_ms)
-            return -1;
+            throw Srf02::Status::timeout;
     }
 
     return Wire.read();

@@ -7,8 +7,12 @@
 #define HW_TIMER_INTERVAL_MS 50L
 #define USING_TIMER_TC5 true
 
+#ifdef SENSOR
+
 #include "SAMDTimerInterrupt.hpp"
 #include "SAMD_ISR_Timer.hpp"
+
+#endif
 
 
 
@@ -34,8 +38,8 @@ public:
         delay_too_small,            /* Tried setting delay time to a value lower than MINIMUM_DELAY_MS */
         no_callback,                /* Tried setting period without specifying a callback */
         timer_error,                /* Failed to initialize hardware timer for periodic measurments */
-        already_initialized         /* Common dependencies already initialized */
-        // timeout                     /* Connection timed out when connecting to the srf02 sensor */
+        already_initialized,        /* Common dependencies already initialized */
+        timeout                     /* Connection timed out when connecting to the srf02 sensor */
     };
 
     /**
@@ -53,15 +57,6 @@ public:
     inline int8_t address(void) { return address_; };
 
 
-    /**
-     * Definition of the Srf02 ultrasonic sensor unit selection codes.
-    */
-    enum Unit : uint8_t 
-    {
-        inc = 80,
-        cm  = 81,
-        ms  = 82
-    };
 
 
     /**

@@ -39,11 +39,16 @@ void setup()
 void loop()
 {
 
+  // Serial.println("loop");
   uint16_t range = 0;
   if (sensors[1].oneShot(range) == Srf02::Status::ok)
   {
     Serial.print("Rango: ");
     Serial.println(range);
+  }
+  else
+  {
+    // Serial.println("Timeout");
   }
 }
 
