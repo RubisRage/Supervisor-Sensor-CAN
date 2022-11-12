@@ -9,7 +9,7 @@ SAMD_ISR_Timer Srf02::ISR_timer_;
 
 Srf02::Srf02(uint8_t address) : address_(address >> 1),
                                 delay_ms_(MINIMUM_DELAY_MS),
-                                unit_(Srf02::Unit::cm),
+                                unit_(Srf02Config::Unit::cm),
                                 last_measurement_ms_(millis()),
                                 callback_(nullptr),
                                 onPeriod_(false)
@@ -63,6 +63,7 @@ Srf02::Status Srf02::readRange(uint16_t &range)
     }
     catch(Srf02::Status ex)
     {
+        Serial.println("Returning timeout");
         return ex;
     }
 
@@ -79,7 +80,6 @@ void Srf02::callbackDispatcher(void* arg)
     
     uint16_t range;
     sensor->readRange(range);
-
     sensor->callback_(range);
 }
 

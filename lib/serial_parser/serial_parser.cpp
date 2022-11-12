@@ -1,5 +1,6 @@
 #include <serial_parser.hpp>
 #include <string.h>
+#include <stdexcept>
 
 #define DEBUG true
 
@@ -32,86 +33,80 @@ Parser::Command Parser::parseCommand(char* toParse)
         return parseSensorCommand();
     }
 
-    throw Parser::Error::unknown_command;
+    return Parser::Command::none;
 }
 
-Parser::Command Parser::parseSensorCommand()
+Parser::Command Parser::parseSensorCommand() 
 {
     char* token = strtok(NULL, " ");
 
     if(token == NULL)
         return Parser::Command::list_sensors;
 
-    token = strtok(NULL, " ");
-
-    Serial.println((int)token[0]);
-
     if(!isNumber(token))
     {
-        Serial.println("Throwing...");
-        throw Parser::Error::number_expected;
+        return Parser::Command::none;
     }
     
     sensorId_ = atoi(token);
 
     token = strtok(NULL, " ");
 
-    if(strcmp(token, "delay"))
+    if(strcmp(token, "delay") == 0)
     {
+        Serial.println(1);
         token = strtok(NULL, " ");
 
         if(!isNumber(token))
-            throw Parser::Error::number_expected;
+            return Parser::Command::none;
 
         delay_ms_ = atoi(token);
 
         return Parser::Command::set_delay;
     }
 
-    if(strcmp(token, "status"))
+    if(strcmp(token, "status") == 0)
     {
         return Parser::Command::get_status;
     }
 
-    if(strcmp(token, "unit"))
+    if(strcmp(token, "unit") == 0)
     {
         token = strtok(NULL, " ");
 
-        if(!isNumber(token))
-            throw Parser::Error::number_expected;
-
+        // TODO: Actually check if string matches {inc | cm | ms}
         switch(token[0])
         {
-            case 'i': unit_ = Srf02::Unit::inc; break;
-            case 'c': unit_ = Srf02::Unit::cm;  break;
-            case 'm': unit_ = Srf02::Unit::ms;  break;
+            case 'i': unit_ = Srf02Config::Unit::inc; break;
+            case 'c': unit_ = Srf02Config::Unit::cm;  break;
+            case 'm': unit_ = Srf02Config::Unit::ms;  break;
             default:
-                throw Parser::Error::unknown_unit;
+                return Parser::Command::none;
         }
 
         return Parser::Command::set_unit;
     }
 
-    if(strcmp(token, "one-shot"))
+    if(strcmp(token, "one-shot") == 0)
     {
-        operationMode_ = Srf02::OperationMode::one_shot;
+        operationMode_ = Srf02Config::OperationMode::one_shot;
         return Parser::Command::set_operation_mode;
     }
 
-    if(strcmp(token, "off"))
+    if(strcmp(token, "off") == 0)
     {
-        operationMode_ = Srf02::OperationMode::off;
+        operationMode_ = Srf02Config::OperationMode::off;
         return Parser::Command::set_operation_mode;
     }
 
-    if(strcmp(token, "on"))
+    if(strcmp(token, "on") == 0)
     {
         token = strtok(NULL, " ");
         
         if(!isNumber(token))
-            throw Parser::Error::number_expected;
+            return Parser::Command::none;
 
-        operationMode_ = Srf02::OperationMode::on_period;
+        operationMode_ = Srf02Config::OperationMode::on_period;
         period_ms_ = atoi(token);
 
         return Parser::Command::set_operation_mode;

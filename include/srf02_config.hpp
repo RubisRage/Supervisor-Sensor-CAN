@@ -1,5 +1,6 @@
+#pragma once
 
-namespace Srf02
+namespace Srf02Config
 {
     enum OperationMode
     {

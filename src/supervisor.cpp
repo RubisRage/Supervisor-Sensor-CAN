@@ -3,9 +3,18 @@
 
 #include <CAN.h>
 #include <serial_parser.hpp>
-#include <array>
+#include <can_format.hpp>
 
-Parser sp;
+Parser p;
+
+void error_handler()
+{}
+
+typedef void (*handler_t)();
+
+#define HANDLER_NUM 7
+
+handler_t handlers[HANDLER_NUM];
 
 void setup() {
   Serial.begin(9600);
@@ -13,9 +22,44 @@ void setup() {
 
   Serial.setTimeout(5000);
 
+  if(!CAN.begin(500E3))
+  {
+    Serial.println("Starting CAN failed!");
+    exit(1);
+  }
+
+  handlers[Parser::Command::none] = []{
+    Serial.println("Invalid command. Use \"help\" for more information.");
+  };
+
+  handlers[Parser::Command::help] = []{
+    // TODO: Print help info
+  };
+
+  handlers[Parser::Command::list_sensors] = []{
+    // TODO: Err check
+    CAN.beginPacket(CAN_ID::LIST);
+    CAN.endPacket();
+  };
+
+  handlers[Parser::Command::get_status] = []{
+    
+  };
+
+  handlers[Parser::Command::set_delay] = []{
+    
+  };
+
+  handlers[Parser::Command::set_unit] = []{
+    
+  };
+
+  handlers[Parser::Command::set_operation_mode] = []{
+    
+  };
 }
 
-void readUntil( char until, char* buffer, size_t length)
+void readUntil(char until, char* buffer, size_t length)
 {
   char current = 0;
 
@@ -35,27 +79,13 @@ void readUntil( char until, char* buffer, size_t length)
 
 void loop() 
 {
+  #define SIZE 1024
+  char buffer[SIZE];
 
-  char buffer[1000];
-  readUntil('\n', buffer, 1000);
+  readUntil('\n', buffer, SIZE);
 
-  Parser::Command c;
+  Parser::Command c = p.parseCommand(buffer);
 
-  try {
-    c = sp.parseCommand(buffer);
-    Serial.print("Ok: ");
-    Serial.println(c);
-  } 
-  catch(Parser::Error e)
-  {
-    Serial.print("Error: ");
-
-    switch(e)
-    {
-      case Parser::Error::number_expected: Serial.println(1) ; break;
-      case Parser::Error::unknown_command: Serial.println(2); break;
-      case Parser::Error::unknown_unit:Serial.println(3); break;
-    }
-  }
+  handlers[c]();
 }
 

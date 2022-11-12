@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <Arduino.h>
+#include <srf02_config.hpp>
 
 #define SELECTED_TIMER TIMER_TC5
 #define HW_TIMER_INTERVAL_MS 50L
@@ -64,7 +65,7 @@ public:
      * 
      * @param[in] unit used to take measurments from calling moment onwards.
     */
-    inline void unit(Unit unit) { unit_ = unit; }
+    inline void unit(Srf02Config::Unit unit) { unit_ = unit; }
 
 
     /**
@@ -72,7 +73,7 @@ public:
      * 
      * @return Unit in which measurements are being taken. 
     */
-    inline Unit unit(void) { return unit_; }
+    inline Srf02Config::Unit unit(void) { return unit_; }
 
 
 
@@ -123,7 +124,7 @@ public:
 private:
     uint8_t address_;                           /* Sensor's I2C address              */
     uint16_t delay_ms_;                         /* Sensor's current delay time       */
-    Unit unit_;                                 /* Sensor's current measurement unit */
+    Srf02Config::Unit unit_;                                 /* Sensor's current measurement unit */
     unsigned long last_measurement_ms_;         /* Time of last measurement          */
     bool onPeriod_;                             /* Flag specifying whether or not the onPeriod operation mode is on */
 
