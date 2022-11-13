@@ -49,23 +49,19 @@ void Srf02::setUnit()
 
 Srf02::Status Srf02::readRange(uint16_t &range)
 {
+
     if (sinceLastMeasurement() < delay_ms_)
         return Srf02::Status::delay_not_acomplished;
 
     setUnit();
 
+
     uint8_t range_high, range_low;
 
-    try 
-    {
-        range_high = read_register(Srf02::Register::range_high_byte);
-        range_low  = read_register(Srf02::Register::range_low_byte);
-    }
-    catch(Srf02::Status ex)
-    {
-        Serial.println("Returning timeout");
-        return ex;
-    }
+    if (read_register(Srf02::Register::range_high_byte, range_high)
+        || read_register(Srf02::Register::range_low_byte, range_low))
+        return Srf02::Status::timeout;
+
 
     range = range_high << 8 | range_low;
 
@@ -102,7 +98,7 @@ Srf02::Status Srf02::oneShot(uint16_t& range)
 
 Srf02::Status Srf02::onPeriod(
     uint16_t period_ms, 
-    Srf02::callback_t callback
+    std::function<void(uint16_t)> callback
 )
 {
     if(callback == nullptr && callback_ == nullptr)
@@ -133,7 +129,7 @@ Srf02::Status Srf02::delay(uint16_t delay_ms)
     return Srf02::Status::ok;
 }
 
-uint8_t Srf02::read_register(Srf02::Register srf02_register) 
+int Srf02::read_register(Srf02::Register srf02_register, uint8_t& out) 
 {
     Wire.beginTransmission(address_);
     Wire.write(srf02_register);
@@ -147,12 +143,12 @@ uint8_t Srf02::read_register(Srf02::Register srf02_register)
     while(!Wire.available()) { 
         /* Wait for Srf02 to respond */ 
 
-
         if((millis() - startTime_ms) > timeout_ms)
-            throw Srf02::Status::timeout;
+            return 1;
     }
 
-    return Wire.read();
+    out = Wire.read();
+    return 0;
 }
 
 

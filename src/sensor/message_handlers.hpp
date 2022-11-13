@@ -12,4 +12,4 @@ void unitHandler(Srf02*, size_t);
 void delayHandler(Srf02*, size_t);
 void statusHandler(Srf02*, size_t);
 void listHandler(Srf02*, size_t);
-void Handler(Srf02*, size_t);
+// void Handler(Srf02*, size_t);

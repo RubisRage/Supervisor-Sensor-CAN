@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <Arduino.h>
 #include <srf02_config.hpp>
+#include <functional>
 
 #define SELECTED_TIMER TIMER_TC5
 #define HW_TIMER_INTERVAL_MS 50L
@@ -74,14 +75,7 @@ public:
      * 
      * @return Unit in which measurements are being taken. 
     */
-    inline Srf02Config::Unit unit(void) { return unit_; }
-
-
-
-    /**
-     * On period callback type 
-    */
-    typedef void (*callback_t) (uint16_t);
+    inline Srf02Config::Unit unit(void) const { return unit_; }
 
 
     // TODO: Comment this functions 
@@ -94,7 +88,7 @@ public:
      *         - ok
      *         - no_callback
     */
-    Status onPeriod(uint16_t period_ms, callback_t callback = nullptr);
+    Status onPeriod(uint16_t period_ms, std::function<void(uint16_t)>callback = nullptr);
 
 
     /**
@@ -131,7 +125,7 @@ private:
 
     int timerId_;                               /* SAMD_TimerInterrupt timer ID */
     uint16_t period_ms_;                        /* Time period between periodic measurement    */
-    callback_t callback_;                       /* Handler function for periodic measurements  */
+    std::function<void(uint16_t)> callback_;                       /* Handler function for periodic measurements  */
 
     static SAMDTimer timer_;                    /* Timer for monitoring periodic measurements  */
     static SAMD_ISR_Timer ISR_timer_;           /* ISR_Timer for serving each periodic handler */
@@ -184,13 +178,13 @@ private:
 
     /**
      * Reads one of the Srf02 sensor's registers.
-     * TODO: Add reading timeout to prevent blocking on unexpected cases
      * 
      * @param[in] srf02_register specifying which register to read.
+     * @param[out] out variable in which the register is stored.
      *
-     * @return The read value. Or a negative value if the read times out.
+     * @return 0 if successfull, 1 on timeout.
     */
-    uint8_t read_register(Register srf02_register);
+    int read_register(Register srf02_register, uint8_t& out);
 
     static void callbackDispatcher(void*);
 

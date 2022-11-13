@@ -24,7 +24,7 @@ struct ERR_M
     uint8_t error;
 };
 
-struct OPMODE_M 
+struct __attribute__((packed)) OPMODE_M 
 {
     uint8_t sensorId;
     Srf02Config::OperationMode opMode;
