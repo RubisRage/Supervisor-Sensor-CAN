@@ -7,7 +7,7 @@
 
 enum CAN_ID : uint8_t
 {
-    ACK = 10,
+    ACK = CAN_ID_OFFSET,
     ERR,
     OPMODE,
     UNIT,

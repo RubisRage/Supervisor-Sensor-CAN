@@ -25,8 +25,6 @@ public:
 
     Command parseCommand(char* toParse);
 
-    Command command();
-
     inline Srf02Config::OperationMode operationMode() { return operationMode_; }
     inline uint16_t period() { return period_ms_; }
     inline uint16_t delay() { return delay_ms_; }
@@ -35,7 +33,6 @@ public:
 
 private:
 
-    Command lastCommand_ = Command::none;
     Srf02Config::OperationMode operationMode_;
     uint16_t period_ms_;
     uint16_t delay_ms_;

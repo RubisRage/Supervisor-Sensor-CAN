@@ -1,4 +1,4 @@
-#include <serial_parser.hpp>
+#include <parser.hpp>
 #include <string.h>
 #include <stdexcept>
 
@@ -111,11 +111,4 @@ Parser::Command Parser::parseSensorCommand()
 
         return Parser::Command::set_operation_mode;
     }
-}
-
-Parser::Command Parser::command()
-{ 
-    Command command = lastCommand_;
-    lastCommand_ = Command::none;
-    return command; 
 }

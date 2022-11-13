@@ -11,8 +11,8 @@ Srf02::Srf02(uint8_t address) : address_(address >> 1),
                                 delay_ms_(MINIMUM_DELAY_MS),
                                 unit_(Srf02Config::Unit::cm),
                                 last_measurement_ms_(millis()),
-                                callback_(nullptr),
-                                onPeriod_(false)
+                                onPeriod_(false),
+                                callback_(nullptr)
 {}
 
 Srf02::~Srf02() {}
@@ -90,6 +90,8 @@ Srf02::Status Srf02::off()
         Srf02::ISR_timer_.disable(timerId_);
         onPeriod_ = false;
     }
+
+    return Srf02::Status::ok;
 }
 
 Srf02::Status Srf02::oneShot(uint16_t& range)
@@ -109,9 +111,12 @@ Srf02::Status Srf02::onPeriod(
     if(callback != nullptr) 
         callback_ = callback;
 
+    if(period_ms < delay_ms_)
+        return Srf02::Status::period_too_small;
+
     period_ms_ = period_ms;
 
-    timerId_ = Srf02::ISR_timer_.setInterval(1000UL, Srf02::callbackDispatcher, (void*)this);
+    timerId_ = Srf02::ISR_timer_.setInterval(period_ms_, Srf02::callbackDispatcher, (void*)this);
 
     onPeriod_ = true;
 
