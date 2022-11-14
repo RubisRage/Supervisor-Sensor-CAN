@@ -72,10 +72,14 @@ Srf02::Status Srf02::readRange(uint16_t &range)
 
 void Srf02::callbackDispatcher(void* arg)
 {
+
     Srf02* sensor = (Srf02*) arg;
     
     uint16_t range;
     sensor->readRange(range);
+    static int toggle = HIGH;
+    digitalWrite(LED_BUILTIN, toggle);
+    toggle = !toggle;
     sensor->callback_(range);
 }
 
@@ -106,6 +110,7 @@ Srf02::Status Srf02::onPeriod(
 
     if(callback != nullptr) 
         callback_ = callback;
+
 
     if(period_ms < delay_ms_)
         return Srf02::Status::period_too_small;
@@ -154,5 +159,6 @@ int Srf02::read_register(Srf02::Register srf02_register, uint8_t& out)
 
 void Srf02::TimerHandler() 
 {
+
     Srf02::ISR_timer_.run();
 }

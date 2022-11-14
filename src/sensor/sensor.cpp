@@ -12,6 +12,9 @@ message_handler_t messageHandlers[MESSAGE_HANDLER_NUM];
 
 void setup()
 {
+  pinMode(LED_BUILTIN, OUTPUT);
+  digitalWrite(LED_BUILTIN, LOW);
+
   Srf02::begin();
   Serial.begin(9600);
 
@@ -30,8 +33,6 @@ void loop()
 {
   int packetSize = CAN.parsePacket();
 
-  // Serial.println("Looping...");
-
   if(packetSize)
   {
     long id = CAN.packetId();
@@ -39,5 +40,17 @@ void loop()
     Serial.println(id);
 
     messageHandlers[id - CAN_ID_OFFSET](sensors, SENSOR_COUNT);
+  }
+
+  if(measurementPacketReady)
+  {
+    Serial.print("Range: ");
+    Serial.println(measurementPacket.range);
+
+    CAN.beginPacket(CAN_ID::SENSOR_MEASUREMENT);
+    CAN.write((uint8_t*)&measurementPacket, sizeof(measurementPacket));
+    CAN.endPacket();
+
+    measurementPacketReady = false;
   }
 }

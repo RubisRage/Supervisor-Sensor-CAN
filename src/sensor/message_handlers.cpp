@@ -4,6 +4,9 @@
 #include <srf02_config.hpp>
 #include "Arduino.h"
 
+SENSOR_MEASUREMENT_M measurementPacket;
+bool measurementPacketReady = false;
+
 static void sendError(uint8_t code)
 {
     Serial.println("Error");
@@ -16,23 +19,19 @@ static void sendAck()
     CAN.endPacket();
 }
 
-static void sendMeasurement(const Srf02& sensor, OPMODE_M srcPacket, uint16_t range){
-    Serial.print("Rango: ");
-    Serial.println(range);
-
+static void registerMeasurement(const Srf02& sensor, OPMODE_M srcPacket, uint16_t range){
     SENSOR_MEASUREMENT_M packet;
 
     packet.sensorId = srcPacket.sensorId;
     packet.unit = sensor.unit();
     packet.range = range;
 
-    CAN.beginPacket(CAN_ID::SENSOR_MEASUREMENT);
-    CAN.write((uint8_t*)&packet, sizeof(packet));
-    CAN.endPacket();
+    measurementPacket = packet;
+    measurementPacketReady = true;
 }
 
 template<typename T>
-static T readMessage()
+static void readMessage(T& packet)
 {
     uint8_t buffer[sizeof(T)];
     int current;
@@ -42,16 +41,13 @@ static T readMessage()
         buffer[i] = static_cast<uint8_t>(current);
     }
 
-    T packet;
-
     memcpy(&packet, buffer, sizeof(T));
-
-    return packet;
 }
 
 void opModeHandler(Srf02* sensors, size_t sensorCount)
 {
-    OPMODE_M packet = readMessage<OPMODE_M>();
+    OPMODE_M packet; 
+    readMessage(packet);
 
     // TODO: Define error codes and implement send error func
     if(packet.sensorId >= sensorCount)
@@ -71,8 +67,9 @@ void opModeHandler(Srf02* sensors, size_t sensorCount)
         }
         case Srf02Config::OperationMode::on_period:
         {
-            auto callback = [=](uint16_t range){
-                sendMeasurement(sensor, packet, range);
+            auto callback = [](uint16_t range){
+
+                // registerMeasurement(sensor, packet, range);
             };
 
             ret = sensor.onPeriod(packet.period_ms, callback);
@@ -91,7 +88,7 @@ void opModeHandler(Srf02* sensors, size_t sensorCount)
             ret = sensors[packet.sensorId].oneShot(range);
 
             if(ret == Srf02::Status::ok)
-                sendMeasurement(sensor, packet, range);
+                registerMeasurement(sensor, packet, range);
             else 
                 sendError(ret);
 
@@ -102,7 +99,8 @@ void opModeHandler(Srf02* sensors, size_t sensorCount)
 
 void unitHandler(Srf02* sensors, size_t sensorCount)
 {
-    UNIT_M packet = readMessage<UNIT_M>();
+    UNIT_M packet; 
+    readMessage(packet);
 
     if (packet.sensorId >= sensorCount)
         sendError(0);
@@ -112,7 +110,8 @@ void unitHandler(Srf02* sensors, size_t sensorCount)
 
 void delayHandler(Srf02* sensors, size_t sensorCount)
 {
-    DELAY_M packet = readMessage<DELAY_M>();
+    DELAY_M packet;
+    readMessage(packet);
 
     if (packet.sensorId >= sensorCount)
         sendError(0);
