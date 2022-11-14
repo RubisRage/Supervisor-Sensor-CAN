@@ -7,12 +7,14 @@ bool Srf02::initialized = false;
 SAMDTimer Srf02::timer_(SELECTED_TIMER);
 SAMD_ISR_Timer Srf02::ISR_timer_;
 
-Srf02::Srf02(uint8_t address) : address_(address >> 1),
+Srf02::Srf02(uint8_t address, uint8_t sensorId) : 
+                                address_(address >> 1),
                                 delay_ms_(MINIMUM_DELAY_MS),
                                 unit_(Srf02Config::Unit::cm),
                                 last_measurement_ms_(millis()),
                                 onPeriod_(false),
-                                callback_(nullptr)
+                                callback_(nullptr),
+                                sensorId_(sensorId)
 {}
 
 Srf02::~Srf02() {}
@@ -25,7 +27,7 @@ Srf02::Status Srf02::begin()
 
         bool ret_ = Srf02::timer_.attachInterruptInterval_MS(
             HW_TIMER_INTERVAL_MS, 
-            Srf02::TimerHandler
+            [] { Srf02::ISR_timer_.run(); }
         );
 
         if (!ret_) 
@@ -70,19 +72,6 @@ Srf02::Status Srf02::readRange(uint16_t &range)
     return Srf02::Status::ok;
 }
 
-void Srf02::callbackDispatcher(void* arg)
-{
-
-    Srf02* sensor = (Srf02*) arg;
-    
-    uint16_t range;
-    sensor->readRange(range);
-    static int toggle = HIGH;
-    digitalWrite(LED_BUILTIN, toggle);
-    toggle = !toggle;
-    sensor->callback_(range);
-}
-
 Srf02::Status Srf02::off()
 {
     if(onPeriod_)
@@ -100,10 +89,7 @@ Srf02::Status Srf02::oneShot(uint16_t& range)
     return readRange(range);
 }
 
-Srf02::Status Srf02::onPeriod(
-    uint16_t period_ms, 
-    std::function<void(uint16_t)> callback
-)
+Srf02::Status Srf02::onPeriod(uint16_t period_ms, callback_t callback)
 {
     if(callback == nullptr && callback_ == nullptr)
         return Srf02::Status::no_callback;
@@ -117,7 +103,7 @@ Srf02::Status Srf02::onPeriod(
 
     period_ms_ = period_ms;
 
-    timerId_ = Srf02::ISR_timer_.setInterval(period_ms_, Srf02::callbackDispatcher, (void*)this);
+    timerId_ = Srf02::ISR_timer_.setInterval(period_ms_, callback_, (void*)this);
 
     onPeriod_ = true;
 
@@ -154,11 +140,4 @@ int Srf02::read_register(Srf02::Register srf02_register, uint8_t& out)
 
     out = Wire.read();
     return 0;
-}
-
-
-void Srf02::TimerHandler() 
-{
-
-    Srf02::ISR_timer_.run();
 }

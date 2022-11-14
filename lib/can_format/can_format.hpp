@@ -69,3 +69,9 @@ struct SENSOR_MEASUREMENT_M
     Srf02Config::Unit unit;
     uint16_t range;
 };
+
+
+template<typename T>
+void readMessage(T& packet);
+void sendAck();
+void sendError(uint8_t code);

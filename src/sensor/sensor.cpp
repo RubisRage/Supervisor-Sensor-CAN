@@ -3,10 +3,11 @@
 #include <CAN.h>
 #include <can_format.hpp>
 #include "message_handlers.hpp"
+#include <globals.hpp>
 
-#define SENSOR_COUNT 2
-
-Srf02 sensors[SENSOR_COUNT] = {Srf02(0xE6), Srf02(0xE8)};
+Srf02 sensors[SENSOR_COUNT] = {Srf02(0xE6, 0), Srf02(0xE8, 1)};
+bool measurementPacketReady = false;
+SENSOR_MEASUREMENT_M measurementPacket;
 
 message_handler_t messageHandlers[MESSAGE_HANDLER_NUM];
 
@@ -39,13 +40,19 @@ void loop()
     Serial.print("LLega mensaje ->");
     Serial.println(id);
 
-    messageHandlers[id - CAN_ID_OFFSET](sensors, SENSOR_COUNT);
+    messageHandlers[id - CAN_ID_OFFSET]();
   }
 
   if(measurementPacketReady)
   {
-    Serial.print("Range: ");
-    Serial.println(measurementPacket.range);
+    uint16_t range;
+    sensors[measurementPacket.sensorId].oneShot(range);
+    measurementPacket.range = range;
+
+    Serial.print("Range (");
+    Serial.print(measurementPacket.sensorId);
+    Serial.print("): ");
+    Serial.println(range);
 
     CAN.beginPacket(CAN_ID::SENSOR_MEASUREMENT);
     CAN.write((uint8_t*)&measurementPacket, sizeof(measurementPacket));

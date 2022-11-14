@@ -16,8 +16,6 @@
 
 #endif
 
-
-
 /**
  * This class represents an intance of a Srf02 ultrasonic sensor connected via I2C.
  * 
@@ -27,7 +25,7 @@
 class Srf02
 {
 public:
-    Srf02(uint8_t address);
+    Srf02(uint8_t address, uint8_t sensorId);
     ~Srf02();
 
     /**
@@ -77,10 +75,18 @@ public:
     */
     inline Srf02Config::Unit unit(void) const { return unit_; }
 
+    /**
+     * 
+    */
+   inline uint8_t sensorId() const { return sensorId_; }
+
 
     // TODO: Comment this functions 
     Status off();
     Status oneShot(uint16_t& range);
+
+    typedef void (*callback_t)(void*);
+
     /**
      *
      * 
@@ -88,7 +94,7 @@ public:
      *         - ok
      *         - no_callback
     */
-    Status onPeriod(uint16_t period_ms, std::function<void(uint16_t)>callback = nullptr);
+    Status onPeriod(uint16_t period_ms, callback_t callback);
 
 
     /**
@@ -125,7 +131,8 @@ private:
 
     int timerId_;                               /* SAMD_TimerInterrupt timer ID */
     uint16_t period_ms_;                        /* Time period between periodic measurement    */
-    std::function<void(uint16_t)> callback_;                       /* Handler function for periodic measurements  */
+    callback_t callback_;                       /* Handler function for periodic measurements  */
+    uint8_t sensorId_;
 
     static SAMDTimer timer_;                    /* Timer for monitoring periodic measurements  */
     static SAMD_ISR_Timer ISR_timer_;           /* ISR_Timer for serving each periodic handler */
@@ -185,12 +192,4 @@ private:
      * @return 0 if successfull, 1 on timeout.
     */
     int read_register(Register srf02_register, uint8_t& out);
-
-    static void callbackDispatcher(void*);
-
-    /**
-     * Run ISR Timer on every HW timer interrupt 
-    */
-    static void TimerHandler();
-
 };

@@ -3,54 +3,24 @@
 #include <CAN.h>
 #include <srf02_config.hpp>
 #include "Arduino.h"
+#include <globals.hpp>
 
-SENSOR_MEASUREMENT_M measurementPacket;
-bool measurementPacketReady = false;
+static void registerMeasurement(void* arg){
+    Srf02* sensor = (Srf02*) arg;
 
-static void sendError(uint8_t code)
-{
-    Serial.println("Error");
-}
+    measurementPacket.sensorId = sensor->sensorId();
+    measurementPacket.unit = sensor->unit();
 
-static void sendAck()
-{
-    Serial.println("Ack");
-    CAN.beginPacket(CAN_ID::ACK);
-    CAN.endPacket();
-}
-
-static void registerMeasurement(const Srf02& sensor, OPMODE_M srcPacket, uint16_t range){
-    SENSOR_MEASUREMENT_M packet;
-
-    packet.sensorId = srcPacket.sensorId;
-    packet.unit = sensor.unit();
-    packet.range = range;
-
-    measurementPacket = packet;
     measurementPacketReady = true;
 }
 
-template<typename T>
-static void readMessage(T& packet)
-{
-    uint8_t buffer[sizeof(T)];
-    int current;
-
-    for(size_t i = 0; (current = CAN.read()) != -1; i++)
-    {
-        buffer[i] = static_cast<uint8_t>(current);
-    }
-
-    memcpy(&packet, buffer, sizeof(T));
-}
-
-void opModeHandler(Srf02* sensors, size_t sensorCount)
+void opModeHandler()
 {
     OPMODE_M packet; 
     readMessage(packet);
 
     // TODO: Define error codes and implement send error func
-    if(packet.sensorId >= sensorCount)
+    if(packet.sensorId >= SENSOR_COUNT)
         sendError(0);
 
     Srf02::Status ret;
@@ -61,18 +31,13 @@ void opModeHandler(Srf02* sensors, size_t sensorCount)
         case Srf02Config::OperationMode::off:
         {
             Serial.println("Off");
-            sensors[packet.sensorId].off();
+            sensor.off();
             sendAck();
             break;
         }
         case Srf02Config::OperationMode::on_period:
         {
-            auto callback = [](uint16_t range){
-
-                // registerMeasurement(sensor, packet, range);
-            };
-
-            ret = sensor.onPeriod(packet.period_ms, callback);
+            ret = sensor.onPeriod(packet.period_ms, registerMeasurement);
 
             if(ret == Srf02::Status::ok)
                 sendAck();
@@ -83,12 +48,8 @@ void opModeHandler(Srf02* sensors, size_t sensorCount)
         }
         case Srf02Config::OperationMode::one_shot:
         {
-            uint16_t range;
-
-            ret = sensors[packet.sensorId].oneShot(range);
-
             if(ret == Srf02::Status::ok)
-                registerMeasurement(sensor, packet, range);
+                registerMeasurement(&sensor);
             else 
                 sendError(ret);
 
@@ -97,31 +58,31 @@ void opModeHandler(Srf02* sensors, size_t sensorCount)
     }
 }
 
-void unitHandler(Srf02* sensors, size_t sensorCount)
+void unitHandler()
 {
     UNIT_M packet; 
     readMessage(packet);
 
-    if (packet.sensorId >= sensorCount)
+    if (packet.sensorId >= SENSOR_COUNT)
         sendError(0);
 
     sensors[packet.sensorId].unit(packet.unit);
 }
 
-void delayHandler(Srf02* sensors, size_t sensorCount)
+void delayHandler()
 {
     DELAY_M packet;
     readMessage(packet);
 
-    if (packet.sensorId >= sensorCount)
+    if (packet.sensorId >= SENSOR_COUNT)
         sendError(0);
 
     sensors[packet.sensorId].delay(packet.delay_ms);
 }
 
-void statusHandler(Srf02*, size_t);
+void statusHandler();
 
-void listHandler(Srf02* sensors, size_t sensorCount)
+void listHandler()
 {
     LIST_SENSORS_RESPONSE_M packet;
 
