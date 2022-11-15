@@ -52,13 +52,15 @@ void onReceive(int packetSize)
       STATUS_RESPONSE_M status;
       readMessage<STATUS_RESPONSE_M>(status);
 
-      Serial.print("\tSensor ");
-      Serial.println(status.sensorId);
-      Serial.print("\tI2C address: 0x");
+      Serial.print("\t[ Sensor ");
+      Serial.print(status.sensorId);
+      Serial.println(" ]");
+      Serial.print("\t-> I2C address: 0x");
       Serial.println(status.i2cAddr, HEX);
-      Serial.print("\tDelay: ");
-      Serial.println(status.delay);
-      Serial.print("\tUnit: ");
+      Serial.print("\t-> Delay: ");
+      Serial.print(status.delay);
+      Serial.println(" ms");
+      Serial.print("\t-> Unit: ");
       Serial.println(unit2string(status.unit));
 
       Serial.print("\tPeriod: ");

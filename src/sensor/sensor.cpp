@@ -18,9 +18,6 @@ void setup()
   digitalWrite(LED_BUILTIN, LOW);
 
   Srf02::begin();
-  Serial.begin(9600);
-
-  while(!Serial);
 
   if(!CAN.begin(500E3))
   {
@@ -38,6 +35,8 @@ void setup()
 void loop()
 {
   int packetSize = CAN.parsePacket();
+
+  Srf02 sensor = sensors[0];
 
   /* Call handler on received package */
   if(packetSize)

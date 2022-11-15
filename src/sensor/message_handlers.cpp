@@ -2,12 +2,11 @@
 #include <can_format.hpp>
 #include <CAN.h>
 #include <srf02_config.hpp>
-#include "Arduino.h"
 #include <globals.hpp>
 
 static void registerMeasurement(void* arg){
     int sensorId = (int) arg;
-    Srf02 sensor = sensors[sensorId];
+    const Srf02& sensor = sensors[sensorId];
 
     measurementPacket.sensorId = sensor.sensorId();
     measurementPacket.unit = sensor.unit();
@@ -24,13 +23,12 @@ void opModeHandler()
         sendError(CAN_ERR::unknown_sensor);
 
     Srf02::Status ret;
-    Srf02 sensor = sensors[packet.sensorId];
+    Srf02& sensor = sensors[packet.sensorId];
 
     switch(packet.opMode)
     {
         case Srf02Config::OperationMode::off:
         {
-            Serial.println("Off");
             sensor.off();
             sendAck();
         }
@@ -90,11 +88,8 @@ void statusHandler()
     if (packet.sensorId >= SENSOR_COUNT)
         sendError(CAN_ERR::unknown_sensor);
 
-    Srf02 sensor = sensors[packet.sensorId];
+    const Srf02& sensor = sensors[packet.sensorId];
     STATUS_RESPONSE_M response;
-    
-    Serial.print("Sensor address: ");
-    Serial.println(sensor.address(), HEX);
     
     response.sensorId = sensor.sensorId();
     response.i2cAddr = sensor.address();
@@ -102,9 +97,7 @@ void statusHandler()
     response.unit = sensor.unit();
 
     if(sensor.onPeriod())
-    {
         response.period_ms = sensor.period();
-    }
     else 
         response.period_ms = 0;
 

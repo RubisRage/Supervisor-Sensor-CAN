@@ -40,9 +40,6 @@ void sendMeasurement(Srf02& sensor)
     }
     else 
     {
-        Serial.print("Range: ");
-        Serial.println(packet.range);
-
         CAN.beginPacket(CAN_ID::SENSOR_MEASUREMENT);
         CAN.write((uint8_t*)&packet, sizeof(packet));
         CAN.endPacket();

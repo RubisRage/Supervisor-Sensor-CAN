@@ -98,14 +98,9 @@ Srf02::Status Srf02::onPeriod(uint16_t period_ms, callback_t callback)
 
     period_ms_ = period_ms;
 
-    timerId_ = Srf02::ISR_timer_.setInterval(period_ms_, callback_, (void*)sensorId_);
+    timerId_ = Srf02::ISR_timer_.setInterval(period_ms, callback_, (void*)sensorId_);
 
     onPeriod_ = true;
-
-    Serial.print("On period: ");
-    Serial.print(onPeriod_);
-    Serial.print(", period: ");
-    Serial.println(period_ms_);
 
     return Srf02::Status::ok;
 }

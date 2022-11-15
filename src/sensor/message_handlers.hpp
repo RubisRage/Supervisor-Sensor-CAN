@@ -1,6 +1,5 @@
 #pragma once
 
-#include <cstdlib>
 #include <can_format.hpp>
 #include <srf02.hpp>
 
@@ -16,4 +15,3 @@ void unitHandler();
 void delayHandler();
 void statusHandler();
 void listHandler();
-// void Handler(Srf02*, size_t);

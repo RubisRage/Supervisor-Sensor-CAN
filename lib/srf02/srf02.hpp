@@ -1,7 +1,6 @@
 #pragma once /* SRF02_H */
 
 #include <cstdint>
-#include <Arduino.h>
 #include <srf02_config.hpp>
 #include <functional>
 
@@ -9,12 +8,9 @@
 #define HW_TIMER_INTERVAL_MS 50L
 #define USING_TIMER_TC5 true
 
-// #ifdef SENSOR
-
 #include "SAMDTimerInterrupt.hpp"
 #include "SAMD_ISR_Timer.hpp"
 
-// #endif
 
 /**
  * This class represents an intance of a Srf02 ultrasonic sensor connected via I2C.
@@ -33,7 +29,7 @@ public:
     */
     enum Status : uint8_t
     {
-        ok,                         /* Succesfull */
+        ok,                         /* Successful */
         delay_not_acomplished,      /* Tried taking measurement before specified delay time */
         delay_too_small,            /* Tried setting delay time to a value lower than MINIMUM_DELAY_MS */
         period_too_small,           /* Tried setting period time to a value lower than the set delay */
@@ -131,7 +127,7 @@ public:
     /**
      * TODO: Comment
     */
-    inline uint16_t delay(void) { return delay_ms_; }
+    inline uint16_t delay(void) const { return delay_ms_; }
 
 
 private:
@@ -139,10 +135,10 @@ private:
     uint16_t delay_ms_;                         /* Sensor's current delay time       */
     Srf02Config::Unit unit_;                    /* Sensor's current measurement unit */
     unsigned long last_measurement_ms_;         /* Time of last measurement          */
-    bool onPeriod_;                             /* Flag specifying whether or not the onPeriod operation mode is on */
+    uint16_t period_ms_;                        /* Time period between periodic measurement    */
 
     int timerId_;                               /* SAMD_TimerInterrupt timer ID */
-    uint16_t period_ms_;                        /* Time period between periodic measurement    */
+    bool onPeriod_;                             /* Flag specifying whether or not the onPeriod operation mode is on */
     callback_t callback_;                       /* Handler function for periodic measurements  */
     uint8_t sensorId_;
 
