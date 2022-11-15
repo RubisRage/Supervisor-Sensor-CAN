@@ -74,11 +74,19 @@ Srf02::Status Srf02::readRange(uint16_t &range)
 
 Srf02::Status Srf02::off()
 {
-    if(onPeriod_)
-    {
-        Srf02::ISR_timer_.disable(timerId_);
-        onPeriod_ = false;
-    }
+    // Serial.println(onPeriod_);
+    // if(onPeriod_)
+    // {
+    //     Serial.print("xdd");
+    //     Srf02::ISR_timer_.disable(timerId_);
+    //     onPeriod_ = false;
+    // }
+
+
+    Serial.print("Timer_id - off: ");
+    Serial.println(timerId_);
+
+    Srf02::ISR_timer_.disable(timerId_);
 
     return Srf02::Status::ok;
 }
@@ -103,7 +111,10 @@ Srf02::Status Srf02::onPeriod(uint16_t period_ms, callback_t callback)
 
     period_ms_ = period_ms;
 
-    timerId_ = Srf02::ISR_timer_.setInterval(period_ms_, callback_, (void*)this);
+    timerId_ = Srf02::ISR_timer_.setInterval(period_ms_, callback_, (void*)sensorId_);
+
+    Serial.print("Timer_id - on: ");
+    Serial.println(timerId_);
 
     onPeriod_ = true;
 

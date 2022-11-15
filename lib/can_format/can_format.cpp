@@ -13,6 +13,22 @@ void sendAck()
     CAN.endPacket();
 }
 
+void sendMeasurement(Srf02& sensor)
+{
+    SENSOR_MEASUREMENT_M packet;
+
+    packet.sensorId = sensor.sensorId();
+    packet.unit = sensor.unit();
+    sensor.oneShot(packet.range);
+
+    Serial.print("Range: ");
+    Serial.println(packet.range);
+
+    CAN.beginPacket(CAN_ID::SENSOR_MEASUREMENT);
+    CAN.write((uint8_t*)&packet, sizeof(packet));
+    CAN.endPacket();
+}
+
 template<typename T>
 void readMessage(T& packet)
 {
@@ -29,3 +45,5 @@ void readMessage(T& packet)
 
 /* readMessage function instantiation */
 template void readMessage<OPMODE_M>(OPMODE_M&);
+template void readMessage<UNIT_M>(UNIT_M&);
+template void readMessage<DELAY_M>(DELAY_M&);

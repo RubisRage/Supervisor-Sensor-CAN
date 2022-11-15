@@ -9,12 +9,12 @@
 #define HW_TIMER_INTERVAL_MS 50L
 #define USING_TIMER_TC5 true
 
-#ifdef SENSOR
+// #ifdef SENSOR
 
 #include "SAMDTimerInterrupt.hpp"
 #include "SAMD_ISR_Timer.hpp"
 
-#endif
+// #endif
 
 /**
  * This class represents an intance of a Srf02 ultrasonic sensor connected via I2C.
@@ -57,7 +57,17 @@ public:
     */
     inline int8_t address(void) { return address_; };
 
-
+    /**
+     * Take a distance measurement from the sensor. The returned value's unit depends on the previously set 
+     * unit, defaults to cm.
+     * 
+     * @param[out] range Variable where to store the taken measurement in case of success.
+     * 
+     * @return Success status, either of:
+     *         - ok
+     *         - delay_not_acomplished
+    */
+    Status readRange(uint16_t& range);
 
 
     /**
@@ -171,17 +181,7 @@ private:
     void setUnit(void);
 
 
-    /**
-     * Take a distance measurement from the sensor. The returned value's unit depends on the previously set 
-     * unit, defaults to cm.
-     * 
-     * @param[out] range Variable where to store the taken measurement in case of success.
-     * 
-     * @return Success status, either of:
-     *         - ok
-     *         - delay_not_acomplished
-    */
-    Status readRange(uint16_t& range);
+
 
     /**
      * Reads one of the Srf02 sensor's registers.

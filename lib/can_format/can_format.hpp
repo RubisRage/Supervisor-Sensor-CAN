@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <srf02_config.hpp>
+#include <srf02.hpp>
 
 #define CAN_ID_OFFSET 10
 
@@ -75,3 +76,4 @@ template<typename T>
 void readMessage(T& packet);
 void sendAck();
 void sendError(uint8_t code);
+void sendMeasurement(Srf02& sensor);

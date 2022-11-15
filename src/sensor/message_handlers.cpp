@@ -6,10 +6,14 @@
 #include <globals.hpp>
 
 static void registerMeasurement(void* arg){
-    Srf02* sensor = (Srf02*) arg;
+    // Srf02* sensor = (Srf02*) arg;
+    int sensorId = (int) arg;
+    Srf02 sensor = sensors[sensorId];
 
-    measurementPacket.sensorId = sensor->sensorId();
-    measurementPacket.unit = sensor->unit();
+    measurementPacket.sensorId = sensor.sensorId();
+    measurementPacket.unit = sensor.unit();
+
+
 
     measurementPacketReady = true;
 }
@@ -33,8 +37,8 @@ void opModeHandler()
             Serial.println("Off");
             sensor.off();
             sendAck();
-            break;
         }
+        break;
         case Srf02Config::OperationMode::on_period:
         {
             ret = sensor.onPeriod(packet.period_ms, registerMeasurement);
@@ -44,17 +48,13 @@ void opModeHandler()
             else 
                 sendError(ret);
 
-            break;
         }
+        break;
         case Srf02Config::OperationMode::one_shot:
         {
-            if(ret == Srf02::Status::ok)
-                registerMeasurement(&sensor);
-            else 
-                sendError(ret);
-
-            break;
+            sendMeasurement(sensor);
         }
+        break;
     }
 }
 
@@ -80,7 +80,10 @@ void delayHandler()
     sensors[packet.sensorId].delay(packet.delay_ms);
 }
 
-void statusHandler();
+void statusHandler()
+{
+
+}
 
 void listHandler()
 {
@@ -93,5 +96,3 @@ void listHandler()
     CAN.write((uint8_t*)&packet, sizeof(packet));
     CAN.endPacket();
 }
-
-// void Handler(Srf02*, size_t);
