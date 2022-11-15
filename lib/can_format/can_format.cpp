@@ -52,7 +52,7 @@ void sendMeasurement(Srf02& sensor)
 template<typename T>
 void readMessage(T& packet)
 {
-    uint8_t buffer[sizeof(T)];
+    uint8_t buffer[sizeof(T)] = { 0 };
     int current;
 
     for(size_t i = 0; (current = CAN.read()) != -1; i++)

@@ -84,7 +84,6 @@ void delayHandler()
 
 void statusHandler()
 {
-    Serial.println("Send status response");
     STATUS_M packet;
     readMessage(packet);
 

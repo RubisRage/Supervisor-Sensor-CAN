@@ -1,14 +1,8 @@
 #include <parser.hpp>
 #include <string.h>
-#include <stdexcept>
+#include <cstdlib>
 
-#define DEBUG true
-
-#if DEBUG
-#include "Arduino.h"
-#endif
-
-bool isNumber(char* str)
+static bool isNumber(char* str)
 {
     if(*str == 0) return false;
 
@@ -79,15 +73,14 @@ Parser::Command Parser::parseSensorCommand()
         if(token == NULL)
             return Parser::Command::none;
 
-        // TODO: Actually check if string matches {inc | cm | ms}
-        switch(token[0])
-        {
-            case 'i': unit_ = Srf02Config::Unit::inc; break;
-            case 'c': unit_ = Srf02Config::Unit::cm;  break;
-            case 'm': unit_ = Srf02Config::Unit::ms;  break;
-            default:
-                return Parser::Command::none;
-        }
+        if (strcmp(token, "inc") == 0)
+            unit_ = Srf02Config::Unit::inc;
+        else if (strcmp(token, "cm") == 0)
+            unit_ = Srf02Config::Unit::cm;
+        else if (strcmp(token, "ms") == 0)
+            unit_ = Srf02Config::Unit::ms;
+        else   
+            return Parser::Command::none;
 
         return Parser::Command::set_unit;
     }
@@ -118,4 +111,6 @@ Parser::Command Parser::parseSensorCommand()
 
         return Parser::Command::set_operation_mode;
     }
+
+    return Parser::Command::none;
 }

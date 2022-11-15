@@ -1,16 +1,11 @@
 #pragma once
 
-#include <cstdlib>
-#include <sys/types.h>
 #include <cstdint>
 #include <srf02_config.hpp>
 
 class Parser 
 {
-
 public:
-
-    // SerialParser()
 
     enum Command : int8_t
     {
