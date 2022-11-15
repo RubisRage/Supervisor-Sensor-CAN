@@ -51,11 +51,14 @@ Parser::Command Parser::parseSensorCommand()
     sensorId_ = atoi(token);
 
     token = strtok(NULL, " ");
+    if(token == NULL)
+        return Parser::Command::none;
 
     if(strcmp(token, "delay") == 0)
     {
-        Serial.println(1);
         token = strtok(NULL, " ");
+        if(token == NULL)
+            return Parser::Command::none;
 
         if(!isNumber(token))
             return Parser::Command::none;
@@ -73,6 +76,8 @@ Parser::Command Parser::parseSensorCommand()
     if(strcmp(token, "unit") == 0)
     {
         token = strtok(NULL, " ");
+        if(token == NULL)
+            return Parser::Command::none;
 
         // TODO: Actually check if string matches {inc | cm | ms}
         switch(token[0])
@@ -102,6 +107,8 @@ Parser::Command Parser::parseSensorCommand()
     if(strcmp(token, "on") == 0)
     {
         token = strtok(NULL, " ");
+        if(token == NULL)
+            return Parser::Command::none;
         
         if(!isNumber(token))
             return Parser::Command::none;

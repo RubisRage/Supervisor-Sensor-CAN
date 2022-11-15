@@ -18,4 +18,5 @@ namespace Srf02Config
         cm  = 81,
         ms  = 82
     };
+
 };

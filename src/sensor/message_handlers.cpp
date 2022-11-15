@@ -6,14 +6,11 @@
 #include <globals.hpp>
 
 static void registerMeasurement(void* arg){
-    // Srf02* sensor = (Srf02*) arg;
     int sensorId = (int) arg;
     Srf02 sensor = sensors[sensorId];
 
     measurementPacket.sensorId = sensor.sensorId();
     measurementPacket.unit = sensor.unit();
-
-
 
     measurementPacketReady = true;
 }
@@ -23,9 +20,8 @@ void opModeHandler()
     OPMODE_M packet; 
     readMessage(packet);
 
-    // TODO: Define error codes and implement send error func
     if(packet.sensorId >= SENSOR_COUNT)
-        sendError(0);
+        sendError(CAN_ERR::unknown_sensor);
 
     Srf02::Status ret;
     Srf02 sensor = sensors[packet.sensorId];
@@ -64,9 +60,10 @@ void unitHandler()
     readMessage(packet);
 
     if (packet.sensorId >= SENSOR_COUNT)
-        sendError(0);
+        sendError(CAN_ERR::unknown_sensor);
 
     sensors[packet.sensorId].unit(packet.unit);
+    sendAck();
 }
 
 void delayHandler()
@@ -75,14 +72,47 @@ void delayHandler()
     readMessage(packet);
 
     if (packet.sensorId >= SENSOR_COUNT)
-        sendError(0);
+        sendError(CAN_ERR::unknown_sensor);
 
-    sensors[packet.sensorId].delay(packet.delay_ms);
+    Srf02::Status ret_ = sensors[packet.sensorId].delay(packet.delay_ms);
+
+    if(ret_ == Srf02::Status::ok)
+        sendAck();
+    else 
+        sendError(ret_);
 }
 
 void statusHandler()
 {
+    Serial.println("Send status response");
+    STATUS_M packet;
+    readMessage(packet);
 
+    if (packet.sensorId >= SENSOR_COUNT)
+        sendError(CAN_ERR::unknown_sensor);
+
+    Srf02 sensor = sensors[packet.sensorId];
+    STATUS_RESPONSE_M response;
+    
+    Serial.print("Sensor address: ");
+    Serial.println(sensor.address(), HEX);
+    
+    response.sensorId = sensor.sensorId();
+    response.i2cAddr = sensor.address();
+    response.delay = sensor.delay();
+    response.unit = sensor.unit();
+
+    if(sensor.onPeriod())
+    {
+        response.period_ms = sensor.period();
+    }
+    else 
+        response.period_ms = 0;
+
+
+    CAN.beginPacket(CAN_ID::STATUS_RESPONSE);
+    CAN.write((uint8_t*)&response, sizeof(response));
+    CAN.endPacket();
 }
 
 void listHandler()

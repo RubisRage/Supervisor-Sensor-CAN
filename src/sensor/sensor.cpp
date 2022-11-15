@@ -43,9 +43,6 @@ void loop()
   if(packetSize)
   {
     long id = CAN.packetId();
-    Serial.print("LLega mensaje ->");
-    Serial.println(id);
-
     messageHandlers[id - CAN_ID_OFFSET]();
   }
 
@@ -55,11 +52,6 @@ void loop()
     uint16_t range;
     sensors[measurementPacket.sensorId].readRange(range);
     measurementPacket.range = range;
-
-    Serial.print("Range (");
-    Serial.print(measurementPacket.sensorId);
-    Serial.print("): ");
-    Serial.println(range);
 
     CAN.beginPacket(CAN_ID::SENSOR_MEASUREMENT);
     CAN.write((uint8_t*)&measurementPacket, sizeof(measurementPacket));

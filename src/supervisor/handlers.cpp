@@ -3,15 +3,15 @@
 #include <can_format.hpp>
 #include <CAN.h>
 
-void noneHandler(Parser p)
+void noneHandler(Parser& p)
 {
     Serial.println("Invalid command. Use \"help\" for more information.");
 }
 
 
-void helpHandler(Parser p)
+void helpHandler(Parser& p)
 {
-    char* helpMsg[] = {
+    static char* helpMsg[] = {
         "Available commands and syntax:\n",
         "help: Display this message.\n",
         "us: List available sensors.\n",
@@ -28,7 +28,7 @@ void helpHandler(Parser p)
         Serial.print(s);
 }
 
-void setOpModeHandler(Parser p)
+void setOpModeHandler(Parser& p)
 {
     OPMODE_M packet;
     Srf02Config::OperationMode opMode = p.operationMode();
@@ -39,16 +39,48 @@ void setOpModeHandler(Parser p)
     if( opMode == Srf02Config::OperationMode::on_period )
         packet.period_ms = p.period();
 
-    uint8_t buffer[sizeof(packet)];
-    memcpy(buffer, &packet, sizeof(packet));
-
-    // TODO: Prevent sending period_ms when not using onPeriod operation mode
     CAN.beginPacket(CAN_ID::OPMODE);
-    CAN.write(buffer, sizeof(packet));
+    CAN.write((uint8_t*)&packet, sizeof(packet));
     CAN.endPacket();
 }
 
-// void listSensorsHandler(Parser p);
-// void getStatusHandler(Parser p);
-// void setDelayHandler(Parser p);
-// void setUnitHandler(Parser p);
+void listSensorsHandler(Parser& p)
+{
+    CAN.beginPacket(CAN_ID::LIST, 1, true);
+    CAN.endPacket();
+}
+
+void getStatusHandler(Parser& p)
+{
+    STATUS_M packet;
+    packet.sensorId = p.sensorId();
+
+    CAN.beginPacket(CAN_ID::STATUS);
+    CAN.write((uint8_t*)&packet, sizeof(packet));
+    CAN.endPacket();
+}
+
+void setDelayHandler(Parser& p)
+{
+    DELAY_M packet;
+
+    packet.sensorId = p.sensorId();
+    packet.delay_ms = p.delay();
+
+    CAN.beginPacket(CAN_ID::DELAY);
+    CAN.write((uint8_t*)&packet, sizeof(packet));
+    CAN.endPacket();    
+}
+
+ void setUnitHandler(Parser& p)
+{
+    UNIT_M packet;
+    Srf02Config::Unit unit = p.unit();
+
+    packet.sensorId = p.sensorId();
+    packet.unit = unit;
+
+    CAN.beginPacket(CAN_ID::UNIT);
+    CAN.write((uint8_t*)&packet, sizeof(packet));
+    CAN.endPacket();
+}

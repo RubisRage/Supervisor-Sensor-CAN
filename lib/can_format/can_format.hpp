@@ -6,6 +6,19 @@
 
 #define CAN_ID_OFFSET 10
 
+extern const char* const errorMsg[]; 
+
+enum CAN_ERR : uint8_t 
+{
+    delay_not_acomplished = Srf02::Status::delay_not_acomplished,       /* Tried taking measurement before specified delay time */
+    delay_too_small,                                                    /* Tried setting delay time to a value lower than MINIMUM_DELAY_MS */
+    period_too_small,                                                   /* Tried setting period time to a value lower than the set delay */
+    timer_error,                                                        /* Failed to initialize hardware timer for periodic measurments */
+    already_initialized,                                                /* Common dependencies already initialized */
+    timeout,
+    unknown_sensor                                                             /* Connection timed out when connecting to the srf02 sensor */
+};
+
 enum CAN_ID : uint8_t
 {
     ACK = CAN_ID_OFFSET,

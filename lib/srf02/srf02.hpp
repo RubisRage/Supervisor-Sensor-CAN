@@ -37,7 +37,6 @@ public:
         delay_not_acomplished,      /* Tried taking measurement before specified delay time */
         delay_too_small,            /* Tried setting delay time to a value lower than MINIMUM_DELAY_MS */
         period_too_small,           /* Tried setting period time to a value lower than the set delay */
-        no_callback,                /* Tried setting period without specifying a callback */
         timer_error,                /* Failed to initialize hardware timer for periodic measurments */
         already_initialized,        /* Common dependencies already initialized */
         timeout                     /* Connection timed out when connecting to the srf02 sensor */
@@ -50,12 +49,14 @@ public:
     static Status begin(void);
 
 
+    inline uint16_t period() const { return period_ms_; };
+
     /**
      * Returns the I2C address of the sensor.
      * 
      * @return Sensor's I2C address.
     */
-    inline int8_t address(void) { return address_; };
+    inline uint16_t address(void) const { return address_ << 1; };
 
     /**
      * Take a distance measurement from the sensor. The returned value's unit depends on the previously set 
@@ -88,7 +89,7 @@ public:
     /**
      * 
     */
-   inline uint8_t sensorId() const { return sensorId_; }
+    inline uint8_t sensorId() const { return sensorId_; }
 
 
     // TODO: Comment this functions 
@@ -105,6 +106,7 @@ public:
      *         - no_callback
     */
     Status onPeriod(uint16_t period_ms, callback_t callback);
+    inline bool onPeriod() const { return onPeriod_; }
 
 
     /**
@@ -133,7 +135,7 @@ public:
 
 
 private:
-    uint8_t address_;                           /* Sensor's I2C address              */
+    uint16_t address_;                           /* Sensor's I2C address              */
     uint16_t delay_ms_;                         /* Sensor's current delay time       */
     Srf02Config::Unit unit_;                    /* Sensor's current measurement unit */
     unsigned long last_measurement_ms_;         /* Time of last measurement          */

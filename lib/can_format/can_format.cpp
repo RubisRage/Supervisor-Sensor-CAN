@@ -1,15 +1,28 @@
 #include <can_format.hpp>
 #include <CAN.h>
 
+const char* const errorMsg[] = {
+    "Tried taking measurement before specified delay time was accomplished.",
+    "Tried setting delay time to a value lower than MINIMUM_DELAY_MS",
+    "Tried setting period time to a value lower than the specified delay.",
+    "Failed to initialize hardware timer.",
+    "Connecting to the Srf02 sensor timed out."
+};
+
+
 void sendError(uint8_t code)
 {
-    Serial.println("Error");
+    ERR_M packet;
+    packet.error = code;
+
+    CAN.beginPacket(CAN_ID::ERR);
+    CAN.write((uint8_t*)&packet, sizeof(packet));
+    CAN.endPacket();
 }
 
 void sendAck()
 {
-    Serial.println("Ack");
-    CAN.beginPacket(CAN_ID::ACK);
+    CAN.beginPacket(CAN_ID::ACK, 1, true);
     CAN.endPacket();
 }
 
@@ -19,14 +32,21 @@ void sendMeasurement(Srf02& sensor)
 
     packet.sensorId = sensor.sensorId();
     packet.unit = sensor.unit();
-    sensor.oneShot(packet.range);
+    Srf02::Status ret_ = sensor.oneShot(packet.range);
 
-    Serial.print("Range: ");
-    Serial.println(packet.range);
+    if(ret_ != Srf02::Status::ok)
+    {
+        sendError(ret_);
+    }
+    else 
+    {
+        Serial.print("Range: ");
+        Serial.println(packet.range);
 
-    CAN.beginPacket(CAN_ID::SENSOR_MEASUREMENT);
-    CAN.write((uint8_t*)&packet, sizeof(packet));
-    CAN.endPacket();
+        CAN.beginPacket(CAN_ID::SENSOR_MEASUREMENT);
+        CAN.write((uint8_t*)&packet, sizeof(packet));
+        CAN.endPacket();
+    }
 }
 
 template<typename T>
@@ -47,3 +67,8 @@ void readMessage(T& packet)
 template void readMessage<OPMODE_M>(OPMODE_M&);
 template void readMessage<UNIT_M>(UNIT_M&);
 template void readMessage<DELAY_M>(DELAY_M&);
+template void readMessage<SENSOR_MEASUREMENT_M>(SENSOR_MEASUREMENT_M&);
+template void readMessage<ERR_M>(ERR_M&);
+template void readMessage<LIST_SENSORS_RESPONSE_M>(LIST_SENSORS_RESPONSE_M&);
+template void readMessage<STATUS_RESPONSE_M>(STATUS_RESPONSE_M&);
+template void readMessage<STATUS_M>(STATUS_M&);
